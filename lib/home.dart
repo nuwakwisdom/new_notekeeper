@@ -208,6 +208,12 @@ class DataSearch extends SearchDelegate {
                 color: Color(0xff666666)),
           ),
         ),
+        Expanded(
+            child: ListView.builder(
+                itemCount: suggestionList.length,
+                itemBuilder: (context, index) {
+                  return NotListWidget();
+                }))
       ]),
     );
   }
