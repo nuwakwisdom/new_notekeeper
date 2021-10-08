@@ -31,6 +31,11 @@ dependencies:
   firebase_core:  ^1.0.1
   cloud_firestore:
   firebase_auth: 
+  image_picker: 
+  firebase_storage: ^10.0.3
+  path: ^1.8.0
+  search_page: ^2.0.0+1
+
 
 
   
@@ -74,9 +79,9 @@ flutter:
 
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
-  - family: Lobster
+  - family: Pacifico
     fonts:
-    - asset: fonts/Lobster-Regular.ttf
+    - asset: fonts/Pacifico-Regular.ttf
   #       - asset: fonts/TrajanPro_Bold.ttf
   #         weight: 700
   #

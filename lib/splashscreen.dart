@@ -28,15 +28,15 @@ class _SplashScreenState extends State<SplashScreen> {
             'MYnotekeeper',
             style: TextStyle(
               decoration: TextDecoration.none,
-              fontFamily: 'Fascinate',
-              color: Color(0xffFFF4F4),
+              fontFamily: 'Pacifico',
+              color: Colors.white,
               letterSpacing: 5,
               fontSize: 30,
               fontWeight: FontWeight.bold,
             ),
           ),
         ),
-        decoration: BoxDecoration(color: Colors.deepPurple),
+        decoration: BoxDecoration(color: Colors.black),
       ),
     );
   }

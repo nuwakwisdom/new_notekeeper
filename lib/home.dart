@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:notekeeper/edit.dart';
 import 'package:notekeeper/note.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:notekeeper/note_list_widget.dart';
 import 'package:notekeeper/users.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 
 class Home extends StatefulWidget {
   static const String id = 'home';
@@ -16,6 +18,7 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   final _auth = FirebaseAuth.instance;
+  bool showContainer = false;
 
   FirebaseAuth loggedInUser;
 
@@ -38,24 +41,48 @@ class _HomeState extends State<Home> {
   }
 
   TextEditingController searchController = TextEditingController();
-  final ref = FirebaseFirestore.instance.collection('notes');
+
+  final ref = FirebaseFirestore.instance
+      .collection('users')
+      .doc(FirebaseAuth.instance.currentUser.uid)
+      .collection('notes');
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.black,
       appBar: AppBar(
+        backgroundColor: Colors.black,
+        elevation: 0,
         automaticallyImplyLeading: false,
         title: Text(
-          'Keep Note',
+          'Notes',
+          style: TextStyle(
+              fontFamily: 'Pacifico',
+              fontSize: 20,
+              color: Colors.white,
+              fontWeight: FontWeight.w500),
         ),
-        centerTitle: true,
-        actions: [],
+        actions: [
+          GestureDetector(
+            onTap: () {
+              showSearch(context: context, delegate: DataSearch());
+            },
+            child: Container(
+              child: Icon(Icons.search_outlined),
+              color: Colors.white12,
+              height: 60,
+              width: 60,
+            ),
+          )
+        ],
       ),
       floatingActionButton: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           FloatingActionButton(
+            backgroundColor: Colors.white12,
             child: Icon(Icons.add),
             onPressed: () {
               Navigator.push(
@@ -70,80 +97,118 @@ class _HomeState extends State<Home> {
       body: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(children: [
-            Container(
-              decoration: BoxDecoration(
-                  color: Colors.grey[300],
-                  borderRadius: BorderRadius.circular(15)),
-              padding: EdgeInsets.only(
-                left: 10,
-              ),
-              child: TextFormField(
-                controller: searchController,
-                decoration: InputDecoration(
-                    icon: Icon(Icons.search),
-                    hintText: 'Search note',
-                    border: InputBorder.none),
-              ),
-            ),
             SizedBox(
               height: 20,
             ),
-            Expanded(
-                child: StreamBuilder(
-                    stream: FirebaseFirestore.instance
-                        .doc(_auth.currentUser.uid)
-                        .collection('notes')
-                        .snapshots(),
-                    builder: (context, AsyncSnapshot<QuerySnapshot> snapshots) {
-                      return ListView.builder(
-                        itemBuilder: (context, _index) {
-                          return Padding(
-                            padding: const EdgeInsets.only(
-                              top: 20,
-                            ),
-                            child: GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) => EditPage(
-                                              docToEdit:
-                                                  snapshots.data.docs[_index],
-                                            )));
-                              },
-                              child: Container(
-                                child: Padding(
-                                  padding: const EdgeInsets.only(
-                                    left: 30,
-                                    top: 30,
-                                    right: 20,
-                                  ),
-                                  child: Text(
-                                    snapshots.data.docs[_index][''],
-                                    style: TextStyle(
-                                      fontFamily: 'Lobster',
-                                      fontSize: 25,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                                height: 80,
-                                width: 500,
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(15),
-                                    border: Border.all(
-                                      color: Colors.deepPurple,
-                                      width: 2.5,
-                                    )),
+            StreamBuilder(
+                stream: ref.snapshots(),
+                builder: (context, AsyncSnapshot<QuerySnapshot> snapshots) {
+                  return Expanded(
+                    child: ListView.builder(
+                      itemBuilder: (context, _index) {
+                        return GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => EditPage(
+                                          docToEdit:
+                                              snapshots.data.docs[_index],
+                                        )));
+                          },
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(
+                                height: 30,
                               ),
-                            ),
-                          );
-                        },
-                        itemCount:
-                            snapshots.hasData ? snapshots.data.docs.length : 0,
-                      );
-                    }))
+                              Container(
+                                width: double.infinity,
+                                child: Text(
+                                  snapshots.data.docs[_index].get('title'),
+                                  style: TextStyle(
+                                      fontFamily: 'Pacifico',
+                                      color: Colors.white,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              SizedBox(
+                                height: 20,
+                              ),
+                              Container(
+                                height: 2,
+                                width: double.infinity,
+                                color: Colors.white,
+                              )
+                            ],
+                          ),
+                        );
+                      },
+                      itemCount:
+                          snapshots.hasData ? snapshots.data.docs.length : 0,
+                    ),
+                  );
+                })
           ])),
+    );
+  }
+}
+
+class DataSearch extends SearchDelegate {
+  CollectionReference ref = FirebaseFirestore.instance
+      .collection('users')
+      .doc(FirebaseAuth.instance.currentUser.uid)
+      .collection('notes');
+  final seartData = [NotListWidget()];
+
+  final recentSearch = [];
+
+  @override
+  List<Widget> buildActions(BuildContext context) {
+    return [
+      IconButton(
+          onPressed: () {
+            query = '';
+          },
+          icon: Icon(Icons.clear))
+    ];
+  }
+
+  @override
+  Widget buildLeading(BuildContext context) {
+    return IconButton(
+        onPressed: () {
+          close(context, null);
+        },
+        icon: Icon(Icons.arrow_back));
+  }
+
+  @override
+  Widget buildResults(BuildContext context) {
+    return NotListWidget();
+  }
+
+  @override
+  Widget buildSuggestions(BuildContext context) {
+    final suggestionList = query.isEmpty ? recentSearch : seartData;
+
+    return Container(
+      width: double.infinity,
+      color: Colors.black,
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Padding(
+          padding: const EdgeInsets.only(top: 13, left: 20),
+          child: Text(
+            'Search notes',
+            style: TextStyle(
+                fontFamily: 'SFPro',
+                fontSize: 23,
+                fontWeight: FontWeight.w400,
+                color: Color(0xff666666)),
+          ),
+        ),
+      ]),
     );
   }
 }
